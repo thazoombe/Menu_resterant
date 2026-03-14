@@ -192,20 +192,84 @@
             font-weight: 500;
         }
         
-        .tray-floating {
-            background: var(--primary);
+        .tray-floating:hover { background: var(--primary-hover); transform: scale(1.02); }
+
+        /* New Premium Floating Tray */
+        .premium-tray {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            z-index: 900;
+            background: linear-gradient(135deg, var(--primary), #818cf8);
             color: white;
-            border: none;
-            padding: 0 2rem;
-            border-radius: 3rem;
-            font-weight: 700;
-            cursor: pointer;
+            padding: 1rem 2.5rem;
+            border-radius: 4rem;
             display: flex;
             align-items: center;
-            gap: 0.75rem;
+            gap: 1rem;
+            cursor: pointer;
+            box-shadow: 0 20px 40px rgba(99, 102, 241, 0.4);
+            border: 1px solid rgba(255,255,255,0.2);
+            backdrop-filter: blur(10px);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            text-decoration: none;
+        }
+
+        .premium-tray:hover {
+            transform: translateY(-5px) scale(1.05);
+            box-shadow: 0 30px 50px rgba(99, 102, 241, 0.5);
+        }
+
+        .premium-tray:active { transform: scale(0.95); }
+
+        .tray-icon-wrap {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .tray-count-badge {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: #ef4444;
+            color: white;
+            font-size: 0.7rem;
+            font-weight: 800;
+            min-width: 1.25rem;
+            height: 1.25rem;
+            border-radius: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid #818cf8;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
             transition: all 0.3s;
         }
-        .tray-floating:hover { background: var(--primary-hover); transform: scale(1.02); }
+
+        .tray-text {
+            font-weight: 800;
+            font-size: 1rem;
+            letter-spacing: -0.01em;
+        }
+
+        @keyframes trayPulse {
+            0% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.7); }
+            70% { box-shadow: 0 0 0 15px rgba(99, 102, 241, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); }
+        }
+
+        .tray-pulse { animation: trayPulse 2s infinite; }
+
+        @media (max-width: 768px) {
+            .premium-tray {
+                bottom: 1.5rem;
+                right: 1.5rem;
+                padding: 0.8rem 1.75rem;
+            }
+            .premium-tray .tray-text { font-size: 0.9rem; }
+        }
 
         /* Category Bar */
         .category-scroll {
@@ -431,14 +495,19 @@
 <div class="tools-wrap" id="top">
     <div class="tools-inner glass">
         <div class="search-inner">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="opacity:0.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="opacity:0.5; margin-right: 0.5rem;"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
             <input type="text" id="menu-search" placeholder="Search for your favorite dish...">
+            <button class="btn-primary" style="padding: 0.6rem 1.5rem; font-size: 0.8rem; border-radius: 2rem; margin-left: 0.5rem; box-shadow: none;" onclick="filterMenu()">Search</button>
         </div>
-        <button class="tray-floating" onclick="toggleCart()">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
-            <span>Tray (<span id="cart-count">0</span>)</span>
-        </button>
     </div>
+</div>
+
+<div class="premium-tray tray-pulse" onclick="toggleCart()" id="floating-tray">
+    <div class="tray-icon-wrap">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+        <div class="tray-count-badge" id="cart-count">0</div>
+    </div>
+    <span class="tray-text">View Your Tray</span>
 </div>
 
 <div class="category-scroll">
@@ -583,14 +652,22 @@
         }
         updateCartUI();
         const countBadge = document.getElementById('cart-count');
-        countBadge.style.transform = 'scale(1.4)';
-        setTimeout(() => countBadge.style.transform = 'scale(1)', 200);
+        const tray = document.getElementById('floating-tray');
+        
+        countBadge.style.transform = 'scale(1.5)';
+        tray.style.transform = 'scale(1.1)';
+        
+        setTimeout(() => {
+            countBadge.style.transform = 'scale(1)';
+            tray.style.transform = 'scale(1)';
+        }, 200);
     }
 
     function updateCartUI() {
         const itemsContainer = document.getElementById('cart-items');
         const countBadge = document.getElementById('cart-count');
         const totalDisplay = document.getElementById('cart-total');
+        const tray = document.getElementById('floating-tray');
 
         if (cart.length === 0) {
             itemsContainer.innerHTML = `
@@ -600,9 +677,11 @@
                 </div>`;
             countBadge.innerText = '0';
             totalDisplay.innerText = '$0.00';
+            tray.classList.add('tray-pulse');
             return;
         }
 
+        tray.classList.remove('tray-pulse');
         let html = '';
         let total = 0;
         let count = 0;
@@ -639,8 +718,14 @@
             } else {
                 updateCartUI();
                 const countBadge = document.getElementById('cart-count');
-                countBadge.style.transform = 'scale(1.4)';
-                setTimeout(() => countBadge.style.transform = 'scale(1)', 200);
+                const tray = document.getElementById('floating-tray');
+                
+                countBadge.style.transform = 'scale(1.5)';
+                tray.style.transform = 'scale(1.05)';
+                setTimeout(() => {
+                    countBadge.style.transform = 'scale(1)';
+                    tray.style.transform = 'scale(1)';
+                }, 200);
             }
         }
     }
