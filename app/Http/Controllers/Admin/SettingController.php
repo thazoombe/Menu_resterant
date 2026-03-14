@@ -24,6 +24,7 @@ class SettingController extends Controller
         'youtube'         => '',
         'telegram'        => '',
         'opening_hours'   => 'Mon–Fri 10:00–22:00',
+        'about_restaurant'=> 'Welcome to our restaurant. We take pride in serving the best food in town.',
         'logo_path'       => '',
         'default_theme'   => 'light',
         'enable_translation'=> 'yes',

@@ -163,6 +163,10 @@
                     <input type="text" name="tagline" value="{{ $settings['tagline'] ?? '' }}" placeholder="e.g. Hand-crafted meals delivered to your door">
                 </div>
                 <div class="form-group full">
+                    <label>About Restaurant</label>
+                    <textarea name="about_restaurant" rows="5" placeholder="Write a detailed description about your restaurant's history or story...">{{ $settings['about_restaurant'] ?? '' }}</textarea>
+                </div>
+                <div class="form-group full">
                     <label>Restaurant Logo</label>
                     <div class="logo-upload">
                         <div class="logo-preview" id="logo-preview-box">
@@ -312,7 +316,7 @@
                             </div>
                         </div>
                         <div style="display:flex;gap:0.5rem;">
-                            <button type="button" class="btn-action" onclick='openEditModal(@json($item))'>✏️</button>
+                            <button type="button" class="btn-action" data-item="{{ json_encode($item) }}" onclick='openEditModal(this)'>✏️</button>
                             <form action="/admin/about-items/delete/{{ $item->id }}" method="POST" onsubmit="return confirm('Delete this item?');">
                                 @csrf
                                 <button type="submit" class="btn-action btn-delete-item">🗑️</button>
@@ -463,7 +467,8 @@ function openAddModal() {
     document.getElementById('addModal').style.display = 'flex';
 }
 
-function openEditModal(item) {
+function openEditModal(button) {
+    const item = JSON.parse(button.getAttribute('data-item'));
     document.getElementById('edit_name').value = item.name;
     document.getElementById('edit_role').value = item.role || '';
     document.getElementById('edit_description').value = item.description;

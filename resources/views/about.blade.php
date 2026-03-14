@@ -199,13 +199,20 @@
 
 <div class="container">
     <div class="section-header reveal">
+        <h2>About Our Restaurant</h2>
+        <p style="max-width: 800px; margin: 0 auto; color: var(--text-muted); font-size: 1.15rem; line-height: 1.8;">
+            {!! nl2br(e($appSettings['about_restaurant'] ?? 'Welcome to our restaurant. We take pride in serving the best food in town.')) !!}
+        </p>
+    </div>
+
+    <div class="section-header reveal" style="margin-top: 8rem;">
         <h2>Meet the Architects of Taste</h2>
         <p>A team of dedicated professionals committed to your culinary delight.</p>
     </div>
 
     <div class="about-grid">
         @foreach($aboutItems as $index => $item)
-            <div class="about-card reveal" style="transition-delay: {{ $index * 0.1 }}s" onclick="showDetail({{ json_encode($item) }})">
+            <div class="about-card reveal" style="transition-delay: {{ $index * 0.1 }}s" data-item="{{ json_encode($item) }}" onclick="showDetail(this)">
                 <div class="card-img-wrap">
                     <img src="{{ $item->image_path ?? 'https://ui-avatars.com/api/?name='.urlencode($item->name).'&background=random&size=800' }}" class="card-img" alt="{{ $item->name }}">
                 </div>
@@ -274,7 +281,8 @@
         document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
     });
 
-    function showDetail(item) {
+    function showDetail(element) {
+        const item = JSON.parse(element.getAttribute('data-item'));
         document.getElementById('modal-img').src = item.image_path || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(item.name) + '&background=random&size=800';
         document.getElementById('modal-name').innerText = item.name;
         document.getElementById('modal-role').innerText = item.role || '';
