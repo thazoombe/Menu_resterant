@@ -320,16 +320,71 @@
             transform: translateY(0);
         }
 
-        @media (max-width: 768px) {
-            nav.sticky-nav { padding: 0 1.5rem; }
-            .nav-links { display: none; }
-            .hero h1 { font-size: 3.5rem; }
-            .tools-wrap { margin-top: -2rem; }
             .tools-inner { border-radius: 1.5rem; flex-direction: column; }
+        }
+
+        /* Page Loader Styles */
+        #page-loader {
+            position: fixed;
+            inset: 0;
+            background: var(--glass-dark);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.5s ease;
+        }
+        
+        .loader-content {
+            text-align: center;
+            color: white;
+        }
+        
+        .loader-spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(255,255,255,0.1);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1.5rem;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .loading-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 3px;
+            background: var(--primary);
+            z-index: 10000;
+            transition: width 0.3s ease;
+            width: 0;
+        }
+
+        .loader-text {
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            opacity: 0.8;
         }
     </style>
 </head>
 <body>
+
+<div id="page-loader">
+    <div class="loader-content">
+        <div class="loader-spinner"></div>
+        <div class="loader-text">Loading Excellence...</div>
+    </div>
+</div>
+<div class="loading-bar" id="loading-bar"></div>
 
 <nav class="sticky-nav" id="main-nav">
     <a href="/" class="nav-logo">{{ $appSettings['restaurant_name'] ?? 'The Premium Restaurant' }}</a>
@@ -704,6 +759,59 @@
         }, observerOptions);
 
         document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+        // Page Loader Control
+        const loader = document.getElementById('page-loader');
+        const loadingBar = document.getElementById('loading-bar');
+
+        function hideLoader() {
+            if(loadingBar) loadingBar.style.width = '100%';
+            setTimeout(() => {
+                if(loader) {
+                    loader.style.opacity = '0';
+                    setTimeout(() => loader.style.display = 'none', 500);
+                }
+                if(loadingBar) {
+                    setTimeout(() => loadingBar.style.opacity = '0', 300);
+                }
+            }, 200);
+        }
+
+        function showLoader() {
+            if(loader) {
+                loader.style.display = 'flex';
+                loader.style.opacity = '1';
+            }
+            if(loadingBar) {
+                loadingBar.style.opacity = '1';
+                loadingBar.style.width = '0%';
+                setTimeout(() => loadingBar.style.width = '70%', 10);
+            }
+        }
+
+        // Hide on load
+        window.addEventListener('load', hideLoader);
+        // Handle back/forward cache
+        window.addEventListener('pageshow', (event) => {
+            if (event.persisted) hideLoader();
+        });
+
+        // Intercept clicks
+        document.querySelectorAll('a').forEach(link => {
+            link.addEventListener('click', function(e) {
+                const href = this.getAttribute('href');
+                if (
+                    href && 
+                    !href.startsWith('#') && 
+                    !href.startsWith('tel:') && 
+                    !href.startsWith('mailto:') && 
+                    this.target !== '_blank' &&
+                    !e.ctrlKey && !e.shiftKey && !e.metaKey && !e.altKey
+                ) {
+                    showLoader();
+                }
+            });
+        });
 
         // Parallax Effect
         const heroBg = document.querySelector('.hero-bg');
