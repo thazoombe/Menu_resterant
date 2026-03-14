@@ -108,7 +108,52 @@
             font-weight: 600;
             transition: all 0.3s;
         }
+        .user-pill {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.5rem 1rem;
+            border-radius: 2rem;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid var(--glass-border);
+            text-decoration: none;
+            color: white;
+            font-weight: 600;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
         nav.sticky-nav.scrolled .user-pill { color: var(--text-main); background: rgba(0,0,0,0.05); }
+
+        /* Cart & Overlay */
+        .cart-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.5);
+            backdrop-filter: blur(8px);
+            z-index: 2000;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.4s ease;
+        }
+        .cart-overlay.active { opacity: 1; pointer-events: auto; }
+
+        .cart-panel {
+            position: fixed;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            width: 450px;
+            max-width: 100%;
+            background: var(--bg-light);
+            z-index: 2001;
+            transform: translateX(100%);
+            transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+            display: flex;
+            flex-direction: column;
+            padding: 3rem;
+            box-shadow: -20px 0 50px rgba(0,0,0,0.1);
+        }
+        .cart-panel.active { transform: translateX(0); }
 
         /* Hero Section */
         .hero {
@@ -192,84 +237,20 @@
             font-weight: 500;
         }
         
-        .tray-floating:hover { background: var(--primary-hover); transform: scale(1.02); }
-
-        /* New Premium Floating Tray */
-        .premium-tray {
-            position: fixed;
-            bottom: 2rem;
-            right: 2rem;
-            z-index: 900;
-            background: linear-gradient(135deg, var(--primary), #818cf8);
+        .tray-floating {
+            background: var(--primary);
             color: white;
-            padding: 1rem 2.5rem;
-            border-radius: 4rem;
-            display: flex;
-            align-items: center;
-            gap: 1rem;
+            border: none;
+            padding: 0 2rem;
+            border-radius: 3rem;
+            font-weight: 700;
             cursor: pointer;
-            box-shadow: 0 20px 40px rgba(99, 102, 241, 0.4);
-            border: 1px solid rgba(255,255,255,0.2);
-            backdrop-filter: blur(10px);
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            text-decoration: none;
-        }
-
-        .premium-tray:hover {
-            transform: translateY(-5px) scale(1.05);
-            box-shadow: 0 30px 50px rgba(99, 102, 241, 0.5);
-        }
-
-        .premium-tray:active { transform: scale(0.95); }
-
-        .tray-icon-wrap {
-            position: relative;
             display: flex;
             align-items: center;
-            justify-content: center;
-        }
-
-        .tray-count-badge {
-            position: absolute;
-            top: -8px;
-            right: -8px;
-            background: #ef4444;
-            color: white;
-            font-size: 0.7rem;
-            font-weight: 800;
-            min-width: 1.25rem;
-            height: 1.25rem;
-            border-radius: 1rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 2px solid #818cf8;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            gap: 0.75rem;
             transition: all 0.3s;
         }
-
-        .tray-text {
-            font-weight: 800;
-            font-size: 1rem;
-            letter-spacing: -0.01em;
-        }
-
-        @keyframes trayPulse {
-            0% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.7); }
-            70% { box-shadow: 0 0 0 15px rgba(99, 102, 241, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); }
-        }
-
-        .tray-pulse { animation: trayPulse 2s infinite; }
-
-        @media (max-width: 768px) {
-            .premium-tray {
-                bottom: 1.5rem;
-                right: 1.5rem;
-                padding: 0.8rem 1.75rem;
-            }
-            .premium-tray .tray-text { font-size: 0.9rem; }
-        }
+        .tray-floating:hover { background: var(--primary-hover); transform: scale(1.02); }
 
         /* Category Bar */
         .category-scroll {
@@ -384,71 +365,16 @@
             transform: translateY(0);
         }
 
+        @media (max-width: 768px) {
+            nav.sticky-nav { padding: 0 1.5rem; }
+            .nav-links { display: none; }
+            .hero h1 { font-size: 3.5rem; }
+            .tools-wrap { margin-top: -2rem; }
             .tools-inner { border-radius: 1.5rem; flex-direction: column; }
-        }
-
-        /* Page Loader Styles */
-        #page-loader {
-            position: fixed;
-            inset: 0;
-            background: var(--glass-dark);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            z-index: 9999;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: opacity 0.5s ease;
-        }
-        
-        .loader-content {
-            text-align: center;
-            color: white;
-        }
-        
-        .loader-spinner {
-            width: 50px;
-            height: 50px;
-            border: 3px solid rgba(255,255,255,0.1);
-            border-top-color: var(--primary);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 1.5rem;
-        }
-        
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-        
-        .loading-bar {
-            position: fixed;
-            top: 0;
-            left: 0;
-            height: 3px;
-            background: var(--primary);
-            z-index: 10000;
-            transition: width 0.3s ease;
-            width: 0;
-        }
-
-        .loader-text {
-            font-weight: 700;
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-            font-size: 0.8rem;
-            opacity: 0.8;
         }
     </style>
 </head>
 <body>
-
-<div id="page-loader">
-    <div class="loader-content">
-        <div class="loader-spinner"></div>
-        <div class="loader-text">Loading Excellence...</div>
-    </div>
-</div>
-<div class="loading-bar" id="loading-bar"></div>
 
 <nav class="sticky-nav" id="main-nav">
     <a href="/" class="nav-logo">{{ $appSettings['restaurant_name'] ?? 'The Premium Restaurant' }}</a>
@@ -495,19 +421,14 @@
 <div class="tools-wrap" id="top">
     <div class="tools-inner glass">
         <div class="search-inner">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="opacity:0.5; margin-right: 0.5rem;"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="opacity:0.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
             <input type="text" id="menu-search" placeholder="Search for your favorite dish...">
-            <button class="btn-primary" style="padding: 0.6rem 1.5rem; font-size: 0.8rem; border-radius: 2rem; margin-left: 0.5rem; box-shadow: none;" onclick="filterMenu()">Search</button>
         </div>
+        <button class="tray-floating" onclick="toggleCart()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+            <span>Tray (<span id="cart-count">0</span>)</span>
+        </button>
     </div>
-</div>
-
-<div class="premium-tray tray-pulse" onclick="toggleCart()" id="floating-tray">
-    <div class="tray-icon-wrap">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
-        <div class="tray-count-badge" id="cart-count">0</div>
-    </div>
-    <span class="tray-text">View Your Tray</span>
 </div>
 
 <div class="category-scroll">
@@ -652,22 +573,14 @@
         }
         updateCartUI();
         const countBadge = document.getElementById('cart-count');
-        const tray = document.getElementById('floating-tray');
-        
-        countBadge.style.transform = 'scale(1.5)';
-        tray.style.transform = 'scale(1.1)';
-        
-        setTimeout(() => {
-            countBadge.style.transform = 'scale(1)';
-            tray.style.transform = 'scale(1)';
-        }, 200);
+        countBadge.style.transform = 'scale(1.4)';
+        setTimeout(() => countBadge.style.transform = 'scale(1)', 200);
     }
 
     function updateCartUI() {
         const itemsContainer = document.getElementById('cart-items');
         const countBadge = document.getElementById('cart-count');
         const totalDisplay = document.getElementById('cart-total');
-        const tray = document.getElementById('floating-tray');
 
         if (cart.length === 0) {
             itemsContainer.innerHTML = `
@@ -677,11 +590,9 @@
                 </div>`;
             countBadge.innerText = '0';
             totalDisplay.innerText = '$0.00';
-            tray.classList.add('tray-pulse');
             return;
         }
 
-        tray.classList.remove('tray-pulse');
         let html = '';
         let total = 0;
         let count = 0;
@@ -718,14 +629,8 @@
             } else {
                 updateCartUI();
                 const countBadge = document.getElementById('cart-count');
-                const tray = document.getElementById('floating-tray');
-                
-                countBadge.style.transform = 'scale(1.5)';
-                tray.style.transform = 'scale(1.05)';
-                setTimeout(() => {
-                    countBadge.style.transform = 'scale(1)';
-                    tray.style.transform = 'scale(1)';
-                }, 200);
+                countBadge.style.transform = 'scale(1.4)';
+                setTimeout(() => countBadge.style.transform = 'scale(1)', 200);
             }
         }
     }
@@ -768,7 +673,7 @@
     // ── Search & Filter ──────────────────────────────────────────
     function filterMenu() {
         const query = document.getElementById('menu-search').value.toLowerCase();
-        const menuItems = document.querySelectorAll('.menu-item');
+        const menuItems = document.querySelectorAll('.menu-card');
         const sections = document.querySelectorAll('.category-section');
 
         menuItems.forEach(item => {
@@ -779,7 +684,7 @@
 
         // Hide empty sections
         sections.forEach(section => {
-            const visibleItems = section.querySelectorAll('.menu-item[style*="display: flex"]');
+            const visibleItems = section.querySelectorAll('.menu-card:not([style*="display: none"])');
             section.style.display = visibleItems.length > 0 ? 'block' : 'none';
         });
     }
@@ -844,59 +749,6 @@
         }, observerOptions);
 
         document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
-
-        // Page Loader Control
-        const loader = document.getElementById('page-loader');
-        const loadingBar = document.getElementById('loading-bar');
-
-        function hideLoader() {
-            if(loadingBar) loadingBar.style.width = '100%';
-            setTimeout(() => {
-                if(loader) {
-                    loader.style.opacity = '0';
-                    setTimeout(() => loader.style.display = 'none', 500);
-                }
-                if(loadingBar) {
-                    setTimeout(() => loadingBar.style.opacity = '0', 300);
-                }
-            }, 200);
-        }
-
-        function showLoader() {
-            if(loader) {
-                loader.style.display = 'flex';
-                loader.style.opacity = '1';
-            }
-            if(loadingBar) {
-                loadingBar.style.opacity = '1';
-                loadingBar.style.width = '0%';
-                setTimeout(() => loadingBar.style.width = '70%', 10);
-            }
-        }
-
-        // Hide on load
-        window.addEventListener('load', hideLoader);
-        // Handle back/forward cache
-        window.addEventListener('pageshow', (event) => {
-            if (event.persisted) hideLoader();
-        });
-
-        // Intercept clicks
-        document.querySelectorAll('a').forEach(link => {
-            link.addEventListener('click', function(e) {
-                const href = this.getAttribute('href');
-                if (
-                    href && 
-                    !href.startsWith('#') && 
-                    !href.startsWith('tel:') && 
-                    !href.startsWith('mailto:') && 
-                    this.target !== '_blank' &&
-                    !e.ctrlKey && !e.shiftKey && !e.metaKey && !e.altKey
-                ) {
-                    showLoader();
-                }
-            });
-        });
 
         // Parallax Effect
         const heroBg = document.querySelector('.hero-bg');
