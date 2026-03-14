@@ -2,8 +2,11 @@
 
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\MenuController;
+use Illuminate\Support\Facades\Route;
 
-Route::get('/', [MenuController::class, 'index']);
+Route::get('/', [MenuController::class, 'landing']);
+Route::get('/menu', [MenuController::class, 'index'])->name('menu');
+Route::get('/menu/{id}', [MenuController::class, 'show'])->name('menu.show');
 
 use App\Http\Controllers\Admin\MenuController as AdminMenuController;
 use App\Http\Controllers\Admin\AuthController;
@@ -15,16 +18,22 @@ Route::get('/register', [CustomerAuthController::class, 'showRegister']);
 Route::post('/register', [CustomerAuthController::class, 'register']);
 Route::get('/login', [CustomerAuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [CustomerAuthController::class, 'login']);
-Route::post('/logout', [CustomerAuthController::class, 'logout']);
+Route::post('/logout', [CustomerAuthController::class, 'logout'])->name('logout');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [UserProfileController::class, 'index']);
     Route::post('/profile/update', [UserProfileController::class, 'update']);
     Route::post('/favorite/{id}', [FavoriteController::class, 'toggle']);
+    Route::post('/menu/{id}/review', [MenuController::class, 'storeReview'])->name('menu.review.store');
 });
+
+Route::get('/about', [MenuController::class, 'about']);
 
 use App\Http\Controllers\Admin\ExportController;
 use App\Http\Controllers\Admin\SettingController;
+use App\Http\Controllers\Admin\ReportController;
+use App\Http\Controllers\Admin\CategoryController;
+use App\Http\Controllers\Admin\AboutItemController;
 
 Route::get('/admin/login', [AuthController::class, 'showLogin'])->name('admin.login');
 Route::post('/admin/login', [AuthController::class, 'login']);
@@ -39,6 +48,7 @@ Route::middleware('auth')->prefix('admin')->group(function () {
     Route::get('/export/menu/print', [ExportController::class, 'printMenu']);
     Route::get('/settings', [SettingController::class, 'index']);
     Route::post('/settings/update', [SettingController::class, 'update']);
+    Route::get('/reports', [ReportController::class, 'index']);
     Route::post('/logout', [AuthController::class, 'logout']);
     
     Route::prefix('menu')->group(function () {
@@ -48,6 +58,7 @@ Route::middleware('auth')->prefix('admin')->group(function () {
         Route::get('/edit/{id}', [AdminMenuController::class, 'edit']);
         Route::post('/update/{id}', [AdminMenuController::class, 'update']);
         Route::post('/delete/{id}', [AdminMenuController::class, 'destroy']);
+        Route::post('/delete-photo/{id}', [AdminMenuController::class, 'deletePhoto']);
     });
 
     Route::post('/order/status/{id}', [AdminMenuController::class, 'updateOrderStatus']);
@@ -55,6 +66,18 @@ Route::middleware('auth')->prefix('admin')->group(function () {
     Route::get('/expenses', [AdminMenuController::class, 'expenses']);
     Route::post('/expenses/store', [AdminMenuController::class, 'storeExpense']);
     Route::post('/expenses/delete/{id}', [AdminMenuController::class, 'deleteExpense']);
+
+    // Categories
+    Route::get('/categories', [CategoryController::class, 'index']);
+    Route::post('/categories', [CategoryController::class, 'store']);
+    Route::post('/categories/{id}', [CategoryController::class, 'update']);
+    Route::post('/categories/delete/{id}', [CategoryController::class, 'destroy']);
+
+    // About Us Items
+    Route::post('/about-items', [AboutItemController::class, 'store']);
+    Route::post('/about-items/{item}', [AboutItemController::class, 'update']);
+    Route::post('/about-items/delete/{item}', [AboutItemController::class, 'destroy']);
 });
 
 Route::post('/order/checkout', [MenuController::class, 'checkout']);
+Route::get('/order/invoice/{id}', [MenuController::class, 'invoice'])->name('order.invoice');

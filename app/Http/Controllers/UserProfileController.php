@@ -12,7 +12,8 @@ class UserProfileController extends Controller
     {
         $user = Auth::user();
         $favorites = $user->favorites()->with('category')->get();
-        $orders = Order::where('user_id', $user->id)
+        $orders = Order::with('items')
+                      ->where('user_id', $user->id)
                       ->orWhere('customer_name', $user->name)
                       ->orderBy('created_at', 'desc')
                       ->get();

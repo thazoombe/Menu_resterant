@@ -8,11 +8,53 @@ use Illuminate\Support\Facades\Auth;
 
 class MenuController extends Controller
 {
+    public function landing()
+    {
+        $appSettings = \App\Models\Setting::pluck('value', 'key');
+        return view('welcome', compact('appSettings'));
+    }
+
     public function index()
     {
         $menus = Menu::with('category')->get();
+        // Group menus by category for the sectioned view
+        $groupedMenus = $menus->groupBy('category_id');
+        $categories = \App\Models\Category::all();
         $featuredItem = Menu::where('is_promotion', true)->orWhere('is_new', true)->first();
-        return view('menu', compact('menus', 'featuredItem'));
+        $appSettings = \App\Models\Setting::pluck('value', 'key');
+        return view('menu', compact('groupedMenus', 'categories', 'featuredItem', 'appSettings'));
+    }
+
+    public function show($id)
+    {
+        $menu = Menu::with(['category', 'images', 'reviews.user'])
+                    ->findOrFail($id);
+                    
+        $relatedMenus = Menu::where('category_id', $menu->category_id)
+                            ->where('id', '!=', $id)
+                            ->take(4)
+                            ->get();
+
+        $appSettings = \App\Models\Setting::pluck('value', 'key');
+
+        return view('menu.show', compact('menu', 'relatedMenus', 'appSettings'));
+    }
+
+    public function storeReview(Request $request, $id)
+    {
+        $request->validate([
+            'rating' => 'required|integer|min:1|max:5',
+            'comment' => 'nullable|string|max:1000'
+        ]);
+
+        \App\Models\MenuReview::create([
+            'menu_id' => $id,
+            'user_id' => Auth::id(),
+            'rating' => $request->rating,
+            'comment' => $request->comment
+        ]);
+
+        return redirect()->back()->with('success', 'Review submitted successfully!');
     }
 
     public function checkout(\Illuminate\Http\Request $request)
@@ -60,5 +102,19 @@ class MenuController extends Controller
             \Illuminate\Support\Facades\DB::rollBack();
             return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
         }
+    }
+
+    public function invoice($id)
+    {
+        $order = \App\Models\Order::with('items.menu')->findOrFail($id);
+        $appSettings = \App\Models\Setting::pluck('value', 'key');
+        return view('order.invoice', compact('order', 'appSettings'));
+    }
+
+    public function about()
+    {
+        $aboutItems = \App\Models\AboutItem::orderBy('order')->get();
+        $appSettings = \App\Models\Setting::pluck('value', 'key');
+        return view('about', compact('aboutItems', 'appSettings'));
     }
 }

@@ -3,18 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard</title>
+    <title>Admin Dashboard - {{ $appSettings['restaurant_name'] ?? 'Resto' }}</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
         body { font-family: 'Inter', sans-serif; background: #f8fafc; color: #1e293b; margin: 0; display: flex; }
         
-        .sidebar { width: 260px; background: #0f172a; color: white; height: 100vh; padding: 2rem; box-sizing: border-box; position: sticky; top: 0; }
-        .sidebar h2 { font-size: 1.25rem; font-weight: 800; margin-bottom: 2.5rem; color: #3b82f6; }
-        .sidebar nav a { display: block; color: #94a3b8; text-decoration: none; padding: 0.75rem 1rem; border-radius: 0.5rem; margin-bottom: 0.5rem; transition: all 0.2s; font-weight: 600; }
+        .sidebar { width: 260px; background: #0f172a; color: white; height: 100vh; padding: 2rem; box-sizing: border-box; position: sticky; top: 0; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); z-index: 100; overflow-x: hidden; }
+        .sidebar.collapsed { width: 0; padding: 2rem 0; transform: translateX(-260px); }
+        .sidebar nav a { display: block; color: #94a3b8; text-decoration: none; padding: 0.75rem 1rem; border-radius: 0.5rem; margin-bottom: 0.5rem; transition: all 0.2s; font-weight: 600; white-space: nowrap; }
         .sidebar nav a:hover, .sidebar nav a.active { background: #1e293b; color: white; }
         
-        .main { flex: 1; padding: 3rem; box-sizing: border-box; }
-        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 3rem; }
+        .main { flex: 1; padding: 3rem; box-sizing: border-box; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); width: 100%; }
+        .main.expanded { padding-left: 3rem; }
+        
+        .toggle-btn { background: white; border: 1px solid #e2e8f0; width: 40px; height: 40px; border-radius: 0.75rem; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #0f172a; transition: all 0.2s; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+        .toggle-btn:hover { background: #f8fafc; border-color: #cbd5e1; }
+        
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 3rem; gap: 1.5rem; }
+        .header-left { display: flex; align-items: center; gap: 1.25rem; }
         header h1 { margin: 0; font-size: 1.875rem; font-weight: 800; color: #0f172a; }
         
         .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; margin-bottom: 3rem; }
@@ -65,8 +71,10 @@
     <nav>
         <a href="/admin/dashboard" class="active">Dashboard</a>
         <a href="/admin/menu">Menu Items</a>
+        <a href="/admin/categories">Categories</a>
         <a href="/admin/expenses">Expenses</a>
-        <a href="#">Settings</a>
+        <a href="/admin/reports">Reports</a>
+        <a href="/admin/settings">Settings</a>
         <a href="/" style="color: #10b981; margin-top: 1rem;" target="_blank">🏠 View Homepage</a>
         <form action="/admin/logout" method="POST" style="margin-top: 0.5rem;">
             @csrf
@@ -77,7 +85,12 @@
 
 <div class="main">
     <header>
-        <h1>Dashboard Overview</h1>
+        <div class="header-left">
+            <button class="toggle-btn" id="sidebar-toggle" title="Toggle Sidebar">
+                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+            </button>
+            <h1>Dashboard Overview</h1>
+        </div>
         <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
             <a href="/admin/export/orders" class="btn-status" style="text-decoration: none; padding: 0.5rem 0.8rem; background: white; border: 1px solid #3b82f6; color: #3b82f6; font-size: 0.75rem; font-weight: 700;">CSV Orders</a>
             <a href="/admin/export/orders/print" target="_blank" class="btn-status" style="text-decoration: none; padding: 0.5rem 0.8rem; background: white; border: 1px solid #f59e0b; color: #f59e0b; font-size: 0.75rem; font-weight: 700;">PDF Orders</a>
@@ -104,17 +117,27 @@
             <span>Net Profit</span>
             <h3>${{ number_format($netProfit, 2) }}</h3>
         </div>
+        <div class="stat-card">
+            <span>Total Categories</span>
+            <h3>{{ $totalCategories }}</h3>
+        </div>
     </div>
 
     {{-- Charts --}}
-    <div class="chart-grid">
+    <div class="chart-grid" style="grid-template-columns: 1.5fr 1fr 1fr;">
         <div class="section">
             <h2>📈 Daily Sales — Last 30 Days</h2>
-            <canvas id="dailySalesChart" height="120"></canvas>
+            <canvas id="dailySalesChart" height="150"></canvas>
         </div>
         <div class="section">
             <h2>🏆 Top Selling Dishes</h2>
-            <canvas id="topFoodsChart" height="120"></canvas>
+            <canvas id="topFoodsChart" height="150"></canvas>
+        </div>
+        <div class="section">
+            <h2>📊 Revenue by Category</h2>
+            <div style="height: 150px; display: flex; align-items: center; justify-content: center;">
+                <canvas id="categoryChart"></canvas>
+            </div>
         </div>
     </div>
 
@@ -128,7 +151,7 @@
                     <th>Items</th>
                     <th>Total</th>
                     <th>Status</th>
-                    <th>Action</th>
+                    <th style="text-align: right;">Action</th>
                 </tr>
             </thead>
             <tbody>
@@ -149,20 +172,23 @@
                             {{ $order->status }}
                         </span>
                     </td>
-                    <td>
+                    <td style="display: flex; gap: 0.5rem; align-items: center;">
                         <form action="/admin/order/status/{{ $order->id }}" method="POST">
                             @csrf
-                            <select name="status" class="btn-status" onchange="this.form.submit()">
-                                <option value="pending" {{ $order->status == 'pending' ? 'selected' : '' }}>Mark Pending</option>
-                                <option value="completed" {{ $order->status == 'completed' ? 'selected' : '' }}>Mark Complete</option>
-                                <option value="cancelled" {{ $order->status == 'cancelled' ? 'selected' : '' }}>Mark Cancel</option>
+                            <select name="status" onchange="this.form.submit()" style="padding: 0.25rem; font-size: 0.75rem; border-radius: 0.4rem; border: 1px solid #e2e8f0; outline: none; background: transparent;">
+                                <option value="pending" {{ $order->status === 'pending' ? 'selected' : '' }}>Pending</option>
+                                <option value="completed" {{ $order->status === 'completed' ? 'selected' : '' }}>Completed</option>
+                                <option value="cancelled" {{ $order->status === 'cancelled' ? 'selected' : '' }}>Cancelled</option>
                             </select>
                         </form>
+                        <a href="/order/invoice/{{ $order->id }}" target="_blank" style="color: #3b82f6; text-decoration: none; font-weight: 700; font-size: 0.8rem; margin-left: 1rem;">🖨️ Print</a>
                     </td>
                 </tr>
                 @endforeach
             </tbody>
         </table>
+    </div>
+    
     <div class="section" style="margin-top: 2rem;">
         <h2>Recent Expenses</h2>
         <table>
@@ -270,5 +296,96 @@ new Chart(document.getElementById('topFoodsChart'), {
         }
     }
 });
+
+// ── Chart 3: Revenue by Category Doughnut ────────────────────
+const categorySalesData = @json($categorySales);
+new Chart(document.getElementById('categoryChart'), {
+    type: 'doughnut',
+    data: {
+        labels: categorySalesData.map(c => c.name),
+        datasets: [{
+            data: categorySalesData.map(c => parseFloat(c.revenue)),
+            backgroundColor: ['#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6','#ec4899','#06b6d4','#f97316'],
+            borderWidth: 0,
+            hoverOffset: 10
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: { display: false }
+        },
+        cutout: '65%'
+    }
+});
 </script>
+
+@if(($appSettings['enable_translation'] ?? 'yes') === 'yes')
+<div id="google_translate_element" style="position: fixed; bottom: 20px; right: 20px; z-index: 9999; background: white; padding: 10px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);"></div>
+<script type="text/javascript">
+function googleTranslateElementInit() {
+  new google.translate.TranslateElement({
+      pageLanguage: 'en',
+      includedLanguages: 'en,km',
+      layout: google.translate.TranslateElement.InlineLayout.SIMPLE
+  }, 'google_translate_element');
+}
+</script>
+<script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+<style>
+/* Hide the google branding */
+.goog-te-gadget { color: transparent !important; font-family: 'Inter', sans-serif; font-size: 0px; }
+.goog-te-gadget .goog-te-combo { margin: 0; padding: 0.5rem; border-radius: 0.5rem; border: 1px solid #e2e8f0; font-family: 'Inter', sans-serif; font-size: 0.9rem; color: #1e293b; outline: none; }
+.goog-te-banner-frame.skiptranslate { display: none !important; }
+body { top: 0px !important; }
+</style>
+@endif
+
+<script>
+// Sidebar Toggle Logic
+const sidebar = document.querySelector('.sidebar');
+const main = document.querySelector('.main');
+const toggleBtn = document.getElementById('sidebar-toggle');
+
+// Load state
+if (localStorage.getItem('sidebar-collapsed') === 'true') {
+    sidebar.classList.add('collapsed');
+    main.classList.add('expanded');
+}
+
+toggleBtn.addEventListener('click', () => {
+    sidebar.classList.toggle('collapsed');
+    main.classList.toggle('expanded');
+    localStorage.setItem('sidebar-collapsed', sidebar.classList.contains('collapsed'));
+});
+</script>
+
+@if(($appSettings['default_theme'] ?? 'light') === 'dark')
+<style>
+    /* Dark Mode Overrides for Admin Dashboard */
+    body { background-color: #0f172a; color: #f8fafc; }
+    .sidebar { border-right: 1px solid #334155; }
+    .toggle-btn { background: #1e293b; border-color: #334155; color: white; }
+    .toggle-btn:hover { background: #334155; }
+    .main { background-color: #0f172a; }
+    header h1 { color: #f8fafc; }
+    .stat-card { background: #1e293b; border-color: #334155; }
+    .stat-card span { color: #94a3b8; }
+    .stat-card h3 { color: #f8fafc; }
+    .stat-card.profit h3 { color: #34d399; }
+    .section { background: #1e293b; border-color: #334155; }
+    .section h2 { color: #f8fafc; }
+    th { color: #94a3b8; border-bottom-color: #334155; }
+    td { border-bottom-color: #334155; color: #cbd5e1; }
+    td strong { color: #f8fafc; }
+    .btn-status { background: #0f172a; border-color: #334155; color: #f8fafc; }
+    .btn-status:hover { background: #334155; }
+    select.btn-status { color: #f8fafc; background-color: #0f172a; border: 1px solid #334155; }
+    select.btn-status option { background-color: #1e293b; color: #f8fafc; }
+    #google_translate_element { background: #1e293b !important; border: 1px solid #334155; }
+    .goog-te-combo { background: #0f172a !important; color: white !important; border-color: #334155 !important; }
+    .category-badge { color: #f8fafc; background: #334155; }
+</style>
+@endif
+
 </html>

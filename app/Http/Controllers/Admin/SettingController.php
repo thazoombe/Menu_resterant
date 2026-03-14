@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Setting;
+use App\Models\AboutItem;
 use Illuminate\Http\Request;
 
 class SettingController extends Controller
@@ -19,8 +20,13 @@ class SettingController extends Controller
         'facebook'        => '',
         'instagram'       => '',
         'twitter'         => '',
+        'tiktok'          => '',
+        'youtube'         => '',
+        'telegram'        => '',
         'opening_hours'   => 'Mon–Fri 10:00–22:00',
         'logo_path'       => '',
+        'default_theme'   => 'light',
+        'enable_translation'=> 'yes',
     ];
 
     public function index()
@@ -29,7 +35,8 @@ class SettingController extends Controller
             Setting::firstOrCreate(['key' => $key], ['value' => $value]);
         }
         $settings = Setting::pluck('value', 'key');
-        return view('admin.settings', compact('settings'));
+        $aboutItems = AboutItem::orderBy('order')->get();
+        return view('admin.settings', compact('settings', 'aboutItems'));
     }
 
     public function update(Request $request)

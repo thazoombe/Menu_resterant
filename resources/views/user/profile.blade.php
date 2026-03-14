@@ -67,6 +67,7 @@
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m15 18-6-6 6-6"/></svg>
         Back to Menu
     </a>
+    <a href="/about" style="color:#94a3b8; margin-left: auto; margin-right: 1.5rem;">About Us</a>
     <a href="#" onclick="event.preventDefault(); document.getElementById('logout-form').submit();" style="color:#ef4444;">Logout</a>
     <form id="logout-form" action="/logout" method="POST" style="display:none;">@csrf</form>
 </div>
@@ -143,11 +144,20 @@
                 <h2>🧾 Order History</h2>
                 @forelse($orders as $order)
                     <div class="item-row">
-                        <div>
-                            <h4>Order #{{ $order->id }}</h4>
-                            <span>{{ $order->created_at->format('d M Y, H:i') }} &nbsp;·&nbsp; ${{ number_format($order->total_price, 2) }}</span>
+                        <div style="flex: 1;">
+                            <h4 style="display: flex; justify-content: space-between; align-items: center;">
+                                Order #{{ $order->id }}
+                                <span class="badge badge-{{ $order->status }}">{{ $order->status }}</span>
+                            </h4>
+                            <span style="display: flex; gap: 10px; align-items: center; margin-top: 0.4rem;">
+                                📅 {{ $order->created_at->format('d M Y') }}
+                                <span style="width: 4px; height: 4px; background: #cbd5e1; border-radius: 50%;"></span>
+                                📦 {{ $order->items->sum('quantity') }} items
+                                <span style="width: 4px; height: 4px; background: #cbd5e1; border-radius: 50%;"></span>
+                                💰 ${{ number_format($order->total_price, 2) }}
+                            </span>
                         </div>
-                        <span class="badge badge-{{ $order->status }}">{{ $order->status }}</span>
+                        <a href="/order/invoice/{{ $order->id }}" target="_blank" class="btn" style="width: auto; padding: 0.5rem 0.8rem; font-size: 0.75rem; background: #eff6ff; color: #3b82f6; margin: 0 0 0 1rem;">View Receipt</a>
                     </div>
                 @empty
                     <p class="empty">No orders yet.</p>

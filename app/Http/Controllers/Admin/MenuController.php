@@ -68,6 +68,20 @@ class MenuController extends Controller
         $topFoodLabels = $topFoods->map(fn($i) => $i->menu->name);
         $topFoodData   = $topFoods->pluck('total_qty');
 
+        // Revenue by Category (Pie/Doughnut)
+        $categorySales = \Illuminate\Support\Facades\DB::table('order_items')
+            ->join('orders', 'order_items.order_id', '=', 'orders.id')
+            ->join('menus', 'order_items.menu_id', '=', 'menus.id')
+            ->join('categories', 'menus.category_id', '=', 'categories.id')
+            ->where('orders.status', 'completed')
+            ->where('orders.created_at', '>=', $month)
+            ->select('categories.name', \Illuminate\Support\Facades\DB::raw('SUM(order_items.quantity * order_items.price) as revenue'))
+            ->groupBy('categories.name')
+            ->get();
+        
+        $totalCategories = Category::count();
+        $appSettings = \App\Models\Setting::pluck('value', 'key');
+
         return view('admin.dashboard', compact(
             'salesToday',
             'monthlyRevenue',
@@ -78,7 +92,10 @@ class MenuController extends Controller
             'dailySalesLabels',
             'dailySalesData',
             'topFoodLabels',
-            'topFoodData'
+            'topFoodData',
+            'categorySales',
+            'totalCategories',
+            'appSettings'
         ));
     }
 
@@ -126,8 +143,11 @@ class MenuController extends Controller
             'name' => 'required|string|max:255',
             'description' => 'required|string',
             'price' => 'required|numeric|min:0',
+            'discount_type' => 'nullable|in:fixed,percent',
+            'discount_value' => 'nullable|numeric|min:0',
             'category_id' => 'required|exists:categories,id',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'photos.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
         $data = $request->all();
@@ -141,15 +161,33 @@ class MenuController extends Controller
         $data['is_new'] = $request->has('is_new');
         $data['is_popular'] = $request->has('is_popular');
         $data['is_promotion'] = $request->has('is_promotion');
+        
+        // Ensure discount is null if empty
+        if (empty($data['discount_type'])) {
+            $data['discount_type'] = null;
+            $data['discount_value'] = null;
+        }
 
         unset($data['image']);
-        Menu::create($data);
+        $menu = Menu::create($data);
+
+        if ($request->hasFile('photos')) {
+            foreach ($request->file('photos') as $photo) {
+                $photoName = time().'_'.uniqid().'.'.$photo->extension();  
+                $photo->move(public_path('menus'), $photoName);
+                \App\Models\MenuImage::create([
+                    'menu_id' => $menu->id,
+                    'image_path' => '/menus/'.$photoName
+                ]);
+            }
+        }
+
         return redirect('/admin/menu')->with('success', 'Menu item created successfully!');
     }
 
     public function edit($id)
     {
-        $menu = Menu::findOrFail($id);
+        $menu = Menu::with('images')->findOrFail($id);
         $categories = Category::all();
         return view('admin.menu.edit', compact('menu', 'categories'));
     }
@@ -160,8 +198,11 @@ class MenuController extends Controller
             'name' => 'required|string|max:255',
             'description' => 'required|string',
             'price' => 'required|numeric|min:0',
+            'discount_type' => 'nullable|in:fixed,percent',
+            'discount_value' => 'nullable|numeric|min:0',
             'category_id' => 'required|exists:categories,id',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'photos.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
         $menu = Menu::findOrFail($id);
@@ -177,10 +218,37 @@ class MenuController extends Controller
         $data['is_popular'] = $request->has('is_popular');
         $data['is_promotion'] = $request->has('is_promotion');
 
+        // Ensure discount is null if empty
+        if (empty($data['discount_type'])) {
+            $data['discount_type'] = null;
+            $data['discount_value'] = null;
+        }
+
         unset($data['image']);
         $menu->update($data);
 
+        if ($request->hasFile('photos')) {
+            foreach ($request->file('photos') as $photo) {
+                $photoName = time().'_'.uniqid().'.'.$photo->extension();  
+                $photo->move(public_path('menus'), $photoName);
+                \App\Models\MenuImage::create([
+                    'menu_id' => $menu->id,
+                    'image_path' => '/menus/'.$photoName
+                ]);
+            }
+        }
+
         return redirect('/admin/menu')->with('success', 'Menu item updated successfully!');
+    }
+
+    public function deletePhoto($photoId)
+    {
+        $photo = \App\Models\MenuImage::findOrFail($photoId);
+        if (file_exists(public_path($photo->image_path))) {
+            @unlink(public_path($photo->image_path));
+        }
+        $photo->delete();
+        return redirect()->back()->with('success', 'Photo deleted successfully!');
     }
 
     public function destroy($id)

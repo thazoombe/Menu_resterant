@@ -15,7 +15,9 @@ class Menu extends Model
         'image_path',
         'is_new',
         'is_popular',
-        'is_promotion'
+        'is_promotion',
+        'discount_type',
+        'discount_value'
     ];
 
     public function category()
@@ -23,8 +25,35 @@ class Menu extends Model
         return $this->belongsTo(Category::class);
     }
 
+    public function images()
+    {
+        return $this->hasMany(MenuImage::class);
+    }
+
+    public function reviews()
+    {
+        return $this->hasMany(MenuReview::class);
+    }
+
     public function favoritedBy()
     {
         return $this->belongsToMany(User::class, 'favorites');
+    }
+
+    public function getDiscountedPriceAttribute()
+    {
+        if (!$this->discount_type || !$this->discount_value) {
+            return $this->price;
+        }
+
+        if ($this->discount_type === 'percent') {
+            return max(0, $this->price - ($this->price * ($this->discount_value / 100)));
+        }
+
+        if ($this->discount_type === 'fixed') {
+            return max(0, $this->price - $this->discount_value);
+        }
+
+        return $this->price;
     }
 }

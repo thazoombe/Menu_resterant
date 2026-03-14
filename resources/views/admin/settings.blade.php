@@ -10,13 +10,21 @@
         body { font-family: 'Inter', sans-serif; background: #f8fafc; color: #1e293b; margin: 0; display: flex; }
 
         /* Sidebar */
-        .sidebar { width: 260px; background: #0f172a; color: white; height: 100vh; padding: 2rem; box-sizing: border-box; position: sticky; top: 0; overflow-y: auto; }
-        .sidebar nav a { display: block; color: #94a3b8; text-decoration: none; padding: 0.75rem 1rem; border-radius: 0.5rem; margin-bottom: 0.5rem; transition: all 0.2s; font-weight: 600; }
+        .sidebar { width: 260px; background: #0f172a; color: white; height: 100vh; padding: 2rem; box-sizing: border-box; position: sticky; top: 0; overflow-y: auto; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); z-index: 100; overflow-x: hidden; }
+        .sidebar.collapsed { width: 0; padding: 2rem 0; transform: translateX(-260px); }
+        .sidebar nav a { display: block; color: #94a3b8; text-decoration: none; padding: 0.75rem 1rem; border-radius: 0.5rem; margin-bottom: 0.5rem; transition: all 0.2s; font-weight: 600; white-space: nowrap; }
         .sidebar nav a:hover, .sidebar nav a.active { background: #1e293b; color: white; }
+        .sidebar nav a.active { background: #1e293b; color: white; }
 
         /* Main */
-        .main { flex: 1; padding: 3rem; overflow-y: auto; }
-        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2.5rem; }
+        .main { flex: 1; padding: 3rem; overflow-y: auto; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); width: 100%; }
+        .main.expanded { padding-left: 3rem; }
+        
+        .toggle-btn { background: white; border: 1px solid #e2e8f0; width: 40px; height: 40px; border-radius: 0.75rem; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #0f172a; transition: all 0.2s; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+        .toggle-btn:hover { background: #f8fafc; border-color: #cbd5e1; }
+        
+        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2.5rem; gap: 1.5rem; }
+        .header-left { display: flex; align-items: center; gap: 1.25rem; }
         .page-header h1 { margin: 0; font-size: 1.875rem; font-weight: 800; color: #0f172a; }
 
         /* Cards */
@@ -50,13 +58,35 @@
         /* Alerts */
         .alert-success { background: #dcfce7; color: #166534; border-radius: 0.875rem; padding: 1rem 1.25rem; margin-bottom: 2rem; font-weight: 600; display: flex; align-items: center; gap: 0.75rem; }
 
-        /* Submit button */
-        .btn-save { background: #0f172a; color: white; border: none; padding: 0.875rem 2.5rem; border-radius: 0.875rem; font-weight: 700; font-size: 1rem; cursor: pointer; font-family: inherit; transition: all 0.2s; }
-        .btn-save:hover { background: #3b82f6; transform: translateY(-1px); box-shadow: 0 8px 20px rgba(59,130,246,0.3); }
+        /* Modal */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(8px); z-index: 2000; align-items: center; justify-content: center; padding: 1rem; }
+        .modal-content { background: white; border-radius: 2rem; padding: 3rem; width: 100%; max-width: 600px; max-height: 90vh; overflow-y: auto; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); transform: translateY(20px); animation: modalIn 0.3s ease forwards; }
+        @keyframes modalIn { to { transform: translateY(0); } }
 
-        .social-icon { width: 36px; height: 36px; border-radius: 0.5rem; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.8rem; color: white; flex-shrink: 0; }
-        .input-with-icon { display: flex; align-items: center; gap: 0.5rem; }
-        .input-with-icon input { flex: 1; }
+        /* About Item Card in Admin */
+        .about-item-card { background: white; border: 1px solid #f1f5f9; border-radius: 1.25rem; padding: 1.25rem; display: flex; align-items: center; gap: 1.25rem; margin-bottom: 1rem; transition: all 0.2s; }
+        .about-item-card:hover { border-color: #3b82f6; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+        .about-item-img { width: 64px; height: 64px; border-radius: 1rem; object-fit: cover; background: #f8fafc; flex-shrink: 0; }
+        .about-item-info { flex: 1; }
+        .about-item-name { font-weight: 700; color: #0f172a; margin: 0; font-size: 1rem; }
+        .about-item-role { font-size: 0.825rem; color: #64748b; margin: 0.1rem 0 0; }
+        
+        .btn-action { width: 36px; height: 36px; border-radius: 0.75rem; border: 1px solid #e2e8f0; background: white; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; font-size: 1rem; }
+        .btn-action:hover { background: #f1f5f9; transform: scale(1.05); }
+        .btn-delete-item:hover { background: #fee2e2; border-color: #fecaca; color: #ef4444; }
+
+        .btn-save { background: #0f172a; color: white; border: none; padding: 0.75rem 1.75rem; border-radius: 0.75rem; font-weight: 700; font-size: 0.9375rem; cursor: pointer; font-family: inherit; transition: all 0.2s; }
+        .btn-save:hover { background: #1e293b; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+
+        @if(($appSettings['default_theme'] ?? 'light') === 'dark')
+        .toggle-btn { background: #1e293b; border-color: #334155; color: white; }
+        .toggle-btn:hover { background: #334155; }
+        .about-item-card { background: #1e293b; border-color: #334155; }
+        .about-item-name { color: #f8fafc; }
+        .btn-action { background: #0f172a; border-color: #334155; color: white; }
+        .modal-content { background: #1a2233; color: white; border: 1px solid #334155; }
+        input[type=text], input[type=email], input[type=url], input[type=number], textarea, select { background: #0f172a; color: white; border-color: #334155; }
+        @endif
     </style>
 </head>
 <body>
@@ -79,6 +109,7 @@
     <nav>
         <a href="/admin/dashboard">Dashboard</a>
         <a href="/admin/menu">Menu Items</a>
+        <a href="/admin/categories">Categories</a>
         <a href="/admin/expenses">Expenses</a>
         <a href="/admin/settings" class="active">Settings</a>
         <a href="/" style="color:#10b981;margin-top:1rem;" target="_blank">🏠 View Homepage</a>
@@ -91,9 +122,14 @@
 
 <div class="main">
     <div class="page-header">
-        <div>
-            <h1>⚙️ Settings</h1>
-            <p style="margin:0.25rem 0 0;color:#64748b;font-size:0.9rem;">Manage your restaurant's identity and website configuration.</p>
+        <div class="header-left">
+            <button class="toggle-btn" id="sidebar-toggle" title="Toggle Sidebar">
+                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+            </button>
+            <div>
+                <h1 style="margin:0;">⚙️ Settings</h1>
+                <p style="margin:0.25rem 0 0;color:#64748b;font-size:0.9rem;">Manage your restaurant's identity and website configuration.</p>
+            </div>
         </div>
         <button form="settings-form" type="submit" class="btn-save">💾 Save All Changes</button>
     </div>
@@ -227,6 +263,67 @@
                         <input type="url" name="twitter" value="{{ $settings['twitter'] ?? '' }}" placeholder="https://twitter.com/yourhandle">
                     </div>
                 </div>
+                <div class="form-group">
+                    <label>TikTok</label>
+                    <div class="input-with-icon">
+                        <span class="social-icon" style="background:#000;">📱</span>
+                        <input type="url" name="tiktok" value="{{ $settings['tiktok'] ?? '' }}" placeholder="https://tiktok.com/@yourhandle">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>YouTube</label>
+                    <div class="input-with-icon">
+                        <span class="social-icon" style="background:#ff0000;">📺</span>
+                        <input type="url" name="youtube" value="{{ $settings['youtube'] ?? '' }}" placeholder="https://youtube.com/@yourchannel">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Telegram</label>
+                    <div class="input-with-icon">
+                        <span class="social-icon" style="background:#0088cc;">✈️</span>
+                        <input type="url" name="telegram" value="{{ $settings['telegram'] ?? '' }}" placeholder="https://t.me/yourusername">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- 6. About Us Items --}}
+        <div class="card">
+            <div class="card-header">
+                <div class="card-icon" style="background:#fefce8;">👥</div>
+                <div style="flex:1;">
+                    <h2>About Us Items</h2>
+                    <p>Manage team members or features shown on the About Us page</p>
+                </div>
+                <button type="button" class="logo-btn" style="background:#0f172a;color:white;border:none;" onclick="openAddModal()">(+) Add New Item</button>
+            </div>
+
+            <div id="about-items-list">
+                @forelse($aboutItems as $item)
+                    <div class="about-item-card">
+                        <img src="{{ $item->image_path ?? 'https://ui-avatars.com/api/?name='.urlencode($item->name).'&background=random' }}" class="about-item-img">
+                        <div class="about-item-info">
+                            <p class="about-item-name">{{ $item->name }}</p>
+                            <div style="display: flex; gap: 0.5rem; align-items: center; margin-top: 0.25rem;">
+                                <p class="about-item-role" style="margin: 0;">{{ $item->role ?? 'No Role' }}</p>
+                                @if($item->facebook_url) <span title="Facebook" style="color:#1877f2; font-size: 0.75rem;">f</span> @endif
+                                @if($item->instagram_url) <span title="Instagram" style="color:#e1306c; font-size: 0.75rem;">📸</span> @endif
+                                @if($item->google_url) <span title="Google" style="color:#ea4335; font-size: 0.75rem;">G</span> @endif
+                            </div>
+                        </div>
+                        <div style="display:flex;gap:0.5rem;">
+                            <button type="button" class="btn-action" onclick='openEditModal(@json($item))'>✏️</button>
+                            <form action="/admin/about-items/delete/{{ $item->id }}" method="POST" onsubmit="return confirm('Delete this item?');">
+                                @csrf
+                                <button type="submit" class="btn-action btn-delete-item">🗑️</button>
+                            </form>
+                        </div>
+                    </div>
+                @empty
+                    <div style="text-align:center;padding:2rem;color:#94a3b8;">
+                        <p>No items added yet. Click "Add New Item" to start.</p>
+                    </div>
+                @endforelse
             </div>
         </div>
 
@@ -234,6 +331,90 @@
             <button type="submit" class="btn-save">💾 Save All Changes</button>
         </div>
     </form>
+</div>
+
+{{-- Add Modal --}}
+<div id="addModal" class="modal">
+    <div class="modal-content">
+        <h2 style="margin-top:0;">Add New About Item</h2>
+        <form action="/admin/about-items" method="POST" enctype="multipart/form-data">
+            @csrf
+            <div class="form-group" style="margin-bottom:1rem;">
+                <label>Name / Title</label>
+                <input type="text" name="name" required placeholder="e.g. John Doe or Our Mission">
+            </div>
+            <div class="form-group" style="margin-bottom:1rem;">
+                <label>Role / Subtitle (Optional)</label>
+                <input type="text" name="role" placeholder="e.g. Head Chef or Established 2010">
+            </div>
+            <div class="form-group" style="margin-bottom:1rem;">
+                <label>Description / Detail</label>
+                <textarea name="description" rows="4" required placeholder="Detailed information about this stuff..."></textarea>
+            </div>
+            <div class="form-group" style="margin-bottom:1rem;">
+                <label>Facebook Profile URL</label>
+                <input type="url" name="facebook_url" placeholder="https://facebook.com/username">
+            </div>
+            <div class="form-group" style="margin-bottom:1rem;">
+                <label>Instagram Profile URL</label>
+                <input type="url" name="instagram_url" placeholder="https://instagram.com/username">
+            </div>
+            <div class="form-group" style="margin-bottom:1rem;">
+                <label>Google / Website URL</label>
+                <input type="url" name="google_url" placeholder="https://google.com/or/website">
+            </div>
+            <div class="form-group" style="margin-bottom:1.5rem;">
+                <label>Image (Optional)</label>
+                <input type="file" name="image" accept="image/*">
+            </div>
+            <div style="display:flex;gap:1rem;">
+                <button type="submit" class="btn-save" style="flex:1;">Create Item</button>
+                <button type="button" class="btn-save" style="background:#64748b;flex:1;" onclick="closeModal('addModal')">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{{-- Edit Modal --}}
+<div id="editModal" class="modal">
+    <div class="modal-content">
+        <h2 style="margin-top:0;">Edit About Item</h2>
+        <form id="editForm" method="POST" enctype="multipart/form-data">
+            @csrf
+            <div class="form-group" style="margin-bottom:1rem;">
+                <label>Name / Title</label>
+                <input type="text" name="name" id="edit_name" required>
+            </div>
+            <div class="form-group" style="margin-bottom:1rem;">
+                <label>Role / Subtitle (Optional)</label>
+                <input type="text" name="role" id="edit_role">
+            </div>
+            <div class="form-group" style="margin-bottom:1rem;">
+                <label>Description / Detail</label>
+                <textarea name="description" id="edit_description" rows="4" required></textarea>
+            </div>
+            <div class="form-group" style="margin-bottom:1rem;">
+                <label>Facebook Profile URL</label>
+                <input type="url" name="facebook_url" id="edit_facebook_url" placeholder="https://facebook.com/username">
+            </div>
+            <div class="form-group" style="margin-bottom:1rem;">
+                <label>Instagram Profile URL</label>
+                <input type="url" name="instagram_url" id="edit_instagram_url" placeholder="https://instagram.com/username">
+            </div>
+            <div class="form-group" style="margin-bottom:1rem;">
+                <label>Google / Website URL</label>
+                <input type="url" name="google_url" id="edit_google_url" placeholder="https://google.com/or/website">
+            </div>
+            <div class="form-group" style="margin-bottom:1.5rem;">
+                <label>New Image (Optional)</label>
+                <input type="file" name="image" accept="image/*">
+            </div>
+            <div style="display:flex;gap:1rem;">
+                <button type="submit" class="btn-save" style="flex:1;background:#f59e0b;">Update Item</button>
+                <button type="button" class="btn-save" style="background:#64748b;flex:1;" onclick="closeModal('editModal')">Cancel</button>
+            </div>
+        </form>
+    </div>
 </div>
 
 <script>
@@ -260,5 +441,49 @@
         reader.readAsDataURL(file);
     });
 </script>
+<script>
+// Sidebar Toggle Logic
+const sidebar = document.querySelector('.sidebar');
+const main = document.querySelector('.main');
+const toggleBtn = document.getElementById('sidebar-toggle');
+
+if (localStorage.getItem('sidebar-collapsed') === 'true') {
+    sidebar.classList.add('collapsed');
+    main.classList.add('expanded');
+}
+
+toggleBtn.addEventListener('click', () => {
+    sidebar.classList.toggle('collapsed');
+    main.classList.toggle('expanded');
+    localStorage.setItem('sidebar-collapsed', sidebar.classList.contains('collapsed'));
+});
+
+// Modal Logic
+function openAddModal() {
+    document.getElementById('addModal').style.display = 'flex';
+}
+
+function openEditModal(item) {
+    document.getElementById('edit_name').value = item.name;
+    document.getElementById('edit_role').value = item.role || '';
+    document.getElementById('edit_description').value = item.description;
+    document.getElementById('edit_facebook_url').value = item.facebook_url || '';
+    document.getElementById('edit_instagram_url').value = item.instagram_url || '';
+    document.getElementById('edit_google_url').value = item.google_url || '';
+    document.getElementById('editForm').action = '/admin/about-items/' + item.id;
+    document.getElementById('editModal').style.display = 'flex';
+}
+
+function closeModal(id) {
+    document.getElementById(id).style.display = 'none';
+}
+
+window.onclick = function(event) {
+    if (event.target.classList.contains('modal')) {
+        event.target.style.display = 'none';
+    }
+}
+</script>
+
 </body>
 </html>
