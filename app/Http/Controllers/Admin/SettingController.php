@@ -28,6 +28,16 @@ class SettingController extends Controller
         'logo_path'       => '',
         'default_theme'   => 'light',
         'enable_translation'=> 'yes',
+        'bank_name'       => 'ABA Bank',
+        'account_name'    => 'LAY VANNTHA',
+        'account_number'  => '123 456 789',
+        'payment_qr_path' => '',
+        'aba_merchant_id' => '',
+        'aba_api_key'     => '',
+        'aba_api_url'     => 'https://checkout-sandbox.payway.com.kh/api/payment-gateway/v1/payments/generate-qr',
+        'aba_check_status_url' => 'https://checkout-sandbox.payway.com.kh/api/payment-gateway/v1/payments/check-transaction',
+        'aba_refund_url'  => 'https://checkout-sandbox.payway.com.kh/api/merchant-portal/merchant-access/online-transaction/refund',
+        'aba_payment_link_url' => 'https://checkout-sandbox.payway.com.kh/api/merchant-portal/merchant-access/payment-link/create',
     ];
 
     public function index()
@@ -48,6 +58,12 @@ class SettingController extends Controller
             $filename = 'logo_' . time() . '.' . $request->logo->extension();
             $request->logo->move(public_path('logos'), $filename);
             $data['logo_path'] = '/logos/' . $filename;
+        }
+
+        if ($request->hasFile('payment_qr_code')) {
+            $qrFilename = 'qr_' . time() . '.' . $request->payment_qr_code->extension();
+            $request->payment_qr_code->move(public_path('images'), $qrFilename);
+            $data['payment_qr_path'] = '/images/' . $qrFilename;
         }
 
         foreach ($data as $key => $value) {

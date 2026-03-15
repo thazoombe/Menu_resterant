@@ -81,3 +81,11 @@ Route::middleware('auth')->prefix('admin')->group(function () {
 
 Route::post('/order/checkout', [MenuController::class, 'checkout']);
 Route::get('/order/invoice/{id}', [MenuController::class, 'invoice'])->name('order.invoice');
+
+use App\Http\Controllers\PaymentController;
+Route::get('/payment/aba/{id}', [PaymentController::class, 'checkoutABA'])->name('payment.aba');
+Route::post('/payment/khqr/create/{id}', [PaymentController::class, 'createKHQR'])->name('payment.khqr.create');
+Route::get('/payment/khqr/status/{id}', [PaymentController::class, 'checkTransactionStatus'])->name('payment.khqr.status');
+Route::post('/payment/callback', [PaymentController::class, 'handleCallback'])->name('payment.callback')->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class]);
+Route::post('/admin/payment/refund/{id}', [PaymentController::class, 'refundTransaction'])->name('admin.payment.refund');
+Route::post('/admin/payment/link/{id}', [PaymentController::class, 'createPaymentLink'])->name('admin.payment.link');

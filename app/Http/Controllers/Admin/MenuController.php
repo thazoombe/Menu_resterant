@@ -22,11 +22,11 @@ class MenuController extends Controller
         $today = now()->startOfDay();
         $month = now()->startOfMonth();
 
-        $salesToday = \App\Models\Order::where('status', 'completed')
+        $salesToday = \App\Models\Order::whereIn('status', ['paid', 'completed'])
             ->where('created_at', '>=', $today)
             ->sum('total_price');
 
-        $monthlyRevenue = \App\Models\Order::where('status', 'completed')
+        $monthlyRevenue = \App\Models\Order::whereIn('status', ['paid', 'completed'])
             ->where('created_at', '>=', $month)
             ->sum('total_price');
 
@@ -48,7 +48,7 @@ class MenuController extends Controller
         // Daily sales for the last 30 days
         $last30Days = collect(range(29, 0))->map(function ($daysAgo) {
             $date = now()->subDays($daysAgo)->toDateString();
-            $revenue = \App\Models\Order::where('status', 'completed')
+            $revenue = \App\Models\Order::whereIn('status', ['paid', 'completed'])
                 ->whereDate('created_at', $date)
                 ->sum('total_price');
             return ['date' => now()->subDays($daysAgo)->format('M d'), 'revenue' => (float)$revenue];
@@ -73,7 +73,7 @@ class MenuController extends Controller
             ->join('orders', 'order_items.order_id', '=', 'orders.id')
             ->join('menus', 'order_items.menu_id', '=', 'menus.id')
             ->join('categories', 'menus.category_id', '=', 'categories.id')
-            ->where('orders.status', 'completed')
+            ->whereIn('orders.status', ['paid', 'completed'])
             ->where('orders.created_at', '>=', $month)
             ->select('categories.name', \Illuminate\Support\Facades\DB::raw('SUM(order_items.quantity * order_items.price) as revenue'))
             ->groupBy('categories.name')

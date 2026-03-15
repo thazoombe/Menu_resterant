@@ -172,16 +172,28 @@
                             {{ $order->status }}
                         </span>
                     </td>
-                    <td style="display: flex; gap: 0.5rem; align-items: center;">
+                    <td style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
                         <form action="/admin/order/status/{{ $order->id }}" method="POST">
                             @csrf
                             <select name="status" onchange="this.form.submit()" style="padding: 0.25rem; font-size: 0.75rem; border-radius: 0.4rem; border: 1px solid #e2e8f0; outline: none; background: transparent;">
                                 <option value="pending" {{ $order->status === 'pending' ? 'selected' : '' }}>Pending</option>
+                                <option value="paid" {{ $order->status === 'paid' ? 'selected' : '' }}>Paid</option>
                                 <option value="completed" {{ $order->status === 'completed' ? 'selected' : '' }}>Completed</option>
                                 <option value="cancelled" {{ $order->status === 'cancelled' ? 'selected' : '' }}>Cancelled</option>
+                                <option value="refunded" {{ $order->status === 'refunded' ? 'selected' : '' }}>Refunded</option>
                             </select>
                         </form>
-                        <a href="/order/invoice/{{ $order->id }}" target="_blank" style="color: #3b82f6; text-decoration: none; font-weight: 700; font-size: 0.8rem; margin-left: 1rem;">🖨️ Print</a>
+                        
+                        @if($order->status === 'paid' || $order->status === 'completed')
+                        <form action="{{ route('admin.payment.refund', $order->id) }}" method="POST" onsubmit="return confirm('Are you sure you want to refund this order?')">
+                            @csrf
+                            <button type="submit" class="btn-status" style="color: #ef4444; border-color: #ef4444; padding: 0.25rem 0.5rem; font-size: 0.7rem;">Refund</button>
+                        </form>
+                        @endif
+
+                        <button onclick="createPaymentLink({{ $order->id }})" class="btn-status" style="color: #10b981; border-color: #10b981; padding: 0.25rem 0.5rem; font-size: 0.7rem;">Link</button>
+
+                        <a href="/order/invoice/{{ $order->id }}" target="_blank" style="color: #3b82f6; text-decoration: none; font-weight: 700; font-size: 0.8rem;">🖨️</a>
                     </td>
                 </tr>
                 @endforeach
@@ -358,6 +370,30 @@ toggleBtn.addEventListener('click', () => {
     main.classList.toggle('expanded');
     localStorage.setItem('sidebar-collapsed', sidebar.classList.contains('collapsed'));
 });
+
+async function createPaymentLink(orderId) {
+    if (!confirm('Generate a payment link for this order?')) return;
+    
+    try {
+        const response = await fetch(`/admin/payment/link/${orderId}`, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Accept': 'application/json'
+            }
+        });
+        const data = await response.json();
+        
+        if (data.status == 0 && data.short_link) {
+            prompt('Payment Link Generated! Copy this link:', data.short_link);
+        } else {
+            alert('Error: ' + (data.description || 'Failed to generate link'));
+        }
+    } catch (error) {
+        console.error(error);
+        alert('An error occurred.');
+    }
+}
 </script>
 
 @if(($appSettings['default_theme'] ?? 'light') === 'dark')

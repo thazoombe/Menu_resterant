@@ -236,6 +236,80 @@
             </div>
         </div>
 
+        {{-- Payment Settings --}}
+        <div class="card">
+            <div class="card-header">
+                <div class="card-icon" style="background:#f0fdfa;">💳</div>
+                <div>
+                    <h2>Payment Settings</h2>
+                    <p>Bank QR Code and details shown on customer invoices</p>
+                </div>
+            </div>
+            <div class="form-grid">
+                <div class="form-group full">
+                    <label>Bank Name</label>
+                    <input type="text" name="bank_name" value="{{ $settings['bank_name'] ?? 'ABA Bank' }}" placeholder="e.g. ABA Bank">
+                </div>
+                <div class="form-group">
+                    <label>Account Name</label>
+                    <input type="text" name="account_name" value="{{ $settings['account_name'] ?? '' }}" placeholder="e.g. JOHN DOE">
+                </div>
+                <div class="form-group">
+                    <label>Account Number</label>
+                    <input type="text" name="account_number" value="{{ $settings['account_number'] ?? '' }}" placeholder="e.g. 123 456 789">
+                </div>
+                <div class="form-group full">
+                    <label>Payment QR Code</label>
+                    <div class="logo-upload">
+                        <div class="logo-preview" id="qr-preview-box" style="height: 120px; width: 120px;">
+                            @if(!empty($settings['payment_qr_path']))
+                                <img src="{{ $settings['payment_qr_path'] }}" id="qr-img" alt="QR Code">
+                            @else
+                                <span class="logo-placeholder" id="qr-placeholder" style="font-size: 3rem;">🈺</span>
+                            @endif
+                        </div>
+                        <div>
+                            <button type="button" class="logo-btn" onclick="document.getElementById('qr-input').click()">📁 Upload QR Code</button>
+                            <input type="file" id="qr-input" name="payment_qr_code" accept="image/*">
+                            <p style="font-size:0.75rem;color:#94a3b8;margin:0.5rem 0 0;">PNG, JPG up to 2MB. Clear square image is best.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group full" style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #f1f5f9;">
+                    <label style="color: #3b82f6;">ABA PayWay API (Optional for Dynamic QR)</label>
+                    <p style="font-size: 0.8rem; color: #64748b; margin-bottom: 1rem;">Use this if you want to generate unique QR codes for each order automatically.</p>
+                </div>
+                <div class="form-group">
+                    <label>ABA Merchant ID</label>
+                    <input type="text" name="aba_merchant_id" value="{{ $settings['aba_merchant_id'] ?? '' }}" placeholder="Your PayWay Merchant ID">
+                </div>
+                <div class="form-group">
+                    <label>ABA API Key (Secret)</label>
+                    <input type="text" name="aba_api_key" value="{{ $settings['aba_api_key'] ?? '' }}" placeholder="Your PayWay API Key">
+                </div>
+                <div class="form-group full">
+                    <label>ABA Check Status API URL</label>
+                    <input type="text" name="aba_check_status_url" value="{{ $settings['aba_check_status_url'] ?? 'https://checkout-sandbox.payway.com.kh/api/payment-gateway/v1/payments/check-transaction' }}" placeholder="https://checkout-sandbox.payway.com.kh/api/payment-gateway/v1/payments/check-transaction">
+                </div>
+                <div class="form-group full">
+                    <label>ABA Dynamic QR API URL</label>
+                    <input type="text" name="aba_api_url" value="{{ $settings['aba_api_url'] ?? 'https://checkout-sandbox.payway.com.kh/api/payment-gateway/v1/payments/generate-qr' }}" placeholder="https://checkout-sandbox.payway.com.kh/api/payment-gateway/v1/payments/generate-qr">
+                </div>
+                <div class="form-group full">
+                    <label>ABA Refund API URL</label>
+                    <input type="text" name="aba_refund_url" value="{{ $settings['aba_refund_url'] ?? 'https://checkout-sandbox.payway.com.kh/api/merchant-portal/merchant-access/online-transaction/refund' }}" placeholder="https://checkout-sandbox.payway.com.kh/api/merchant-portal/merchant-access/online-transaction/refund">
+                </div>
+                <div class="form-group full">
+                    <label>ABA Payment Link API URL</label>
+                    <input type="text" name="aba_payment_link_url" value="{{ $settings['aba_payment_link_url'] ?? 'https://checkout-sandbox.payway.com.kh/api/merchant-portal/merchant-access/payment-link/create' }}" placeholder="https://checkout-sandbox.payway.com.kh/api/merchant-portal/merchant-access/payment-link/create">
+                </div>
+                <div class="form-group full" style="margin-top: 10px;">
+                    <a href="https://checkout-sandbox.payway.com.kh/" target="_blank" style="font-size: 0.8rem; color: #3b82f6; text-decoration: none;">🔗 Open ABA PayWay Sandbox Environment</a>
+                </div>
+            </div>
+        </div>
+
         {{-- 4. Social Media --}}
         <div class="card">
             <div class="card-header">
@@ -433,6 +507,29 @@
             if (!img) {
                 img = document.createElement('img');
                 img.id = 'logo-img';
+                img.style.width = '100%';
+                img.style.height = '100%';
+                img.style.objectFit = 'contain';
+                box.innerHTML = '';
+                box.appendChild(img);
+            }
+            img.src = e.target.result;
+            if (placeholder) placeholder.remove();
+        };
+        reader.readAsDataURL(file);
+    });
+
+    document.getElementById('qr-input').addEventListener('change', function() {
+        const file = this.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const box = document.getElementById('qr-preview-box');
+            let img = document.getElementById('qr-img');
+            const placeholder = document.getElementById('qr-placeholder');
+            if (!img) {
+                img = document.createElement('img');
+                img.id = 'qr-img';
                 img.style.width = '100%';
                 img.style.height = '100%';
                 img.style.objectFit = 'contain';

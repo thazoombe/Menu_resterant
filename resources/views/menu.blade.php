@@ -651,6 +651,11 @@
             if (!customerName) return;
         }
 
+        const btn = event.target;
+        const originalText = btn.innerText;
+        btn.innerText = 'Processing...';
+        btn.disabled = true;
+
         fetch('/order/checkout', {
             method: 'POST',
             headers: {
@@ -662,12 +667,153 @@
         .then(res => res.json())
         .then(data => {
             if (data.success) {
-                window.location.href = '/order/invoice/' + data.order_id;
+                // Instead of redirecting to invoice, open KHQR modal immediately
+                btn.innerText = originalText;
+                btn.disabled = false;
+                toggleCart(); // Close tray
+                payWithKHQR(data.order_id);
             } else {
                 alert('Something went wrong. Please try again.');
+                btn.innerText = originalText;
+                btn.disabled = false;
             }
         })
-        .catch(() => alert('Checkout failed. Please try again.'));
+        .catch(() => {
+            alert('Checkout failed. Please try again.');
+            btn.innerText = originalText;
+            btn.disabled = false;
+        });
+    }
+
+    // ── KHQR Modal Logic ──────────────────────────────────────────
+    let pollingInterval;
+    let timerInterval;
+    let timeLeft = 60; // 1 minute as requested
+
+    async function payWithKHQR(orderId) {
+        const modal = document.getElementById('khqrModalV2');
+        const loading = document.getElementById('khqr-loading-v2');
+        const img = document.getElementById('khqr-image-v2');
+        const mainBody = document.getElementById('khqr-modal-main-body');
+        const successBody = document.getElementById('khqr-success-screen');
+        const footer = document.getElementById('khqr-modal-footer');
+        
+        modal.classList.add('active');
+        mainBody.style.display = 'block';
+        successBody.style.display = 'none';
+        footer.style.display = 'flex';
+        loading.style.display = 'block';
+        img.style.display = 'none';
+
+        try {
+            const response = await fetch('/payment/khqr/create/' + orderId, {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': csrfToken }
+            });
+            const data = await response.json();
+
+            if (data.status == 0) {
+                img.src = data.qr_image;
+                document.getElementById('khqr-total-display').innerText = '$' + data.amount;
+                img.style.display = 'block';
+                loading.style.display = 'none';
+
+                // Handle Deep Link
+                const deeplinkBtn = document.getElementById('aba-deeplink-btn');
+                if (data.abapay_deeplink) {
+                    deeplinkBtn.style.display = 'flex';
+                    deeplinkBtn.onclick = () => window.location.href = data.abapay_deeplink;
+                } else {
+                    deeplinkBtn.style.display = 'none';
+                }
+
+                startTimer(orderId);
+                startPolling(orderId);
+            } else {
+                alert('Error: ' + (data.error || 'Failed to generate QR'));
+                closeKHQRV2();
+            }
+        } catch (error) {
+            console.error(error);
+            alert('An error occurred. Please try again.');
+            closeKHQRV2();
+        }
+    }
+
+    function startTimer(orderId) {
+        if (timerInterval) clearInterval(timerInterval);
+        timeLeft = 60;
+        const timerDisplay = document.getElementById('countdown-timer');
+        
+        timerDisplay.innerText = "1:00";
+        
+        timerInterval = setInterval(() => {
+            timeLeft--;
+            const mins = Math.floor(timeLeft / 60);
+            const secs = timeLeft % 60;
+            timerDisplay.innerText = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+            
+            if (timeLeft <= 0) {
+                clearInterval(timerInterval);
+                clearInterval(pollingInterval);
+                alert('Payment session expired. Please order again.');
+                closeKHQRV2();
+            }
+        }, 1000);
+    }
+
+    function startPolling(orderId) {
+        if (pollingInterval) clearInterval(pollingInterval);
+        pollingInterval = setInterval(async () => {
+            try {
+                const response = await fetch('/payment/khqr/status/' + orderId);
+                const data = await response.json();
+                
+                if (data.status === 'paid') {
+                    showSuccess(orderId);
+                }
+            } catch (error) {
+                console.error('Polling error:', error);
+            }
+        }, 3000);
+    }
+
+    function showSuccess(orderId) {
+        clearInterval(pollingInterval);
+        clearInterval(timerInterval);
+        
+        document.getElementById('khqr-modal-main-body').style.display = 'none';
+        document.getElementById('khqr-modal-footer').style.display = 'none';
+        document.getElementById('khqr-success-screen').style.display = 'block';
+        
+        cart = []; // Clear cart on success
+        updateCartUI();
+
+        setTimeout(() => {
+            window.location.href = '/order/invoice/' + orderId;
+        }, 2500);
+    }
+
+    async function checkManualStatus(btn) {
+        // Reuse order_id from current context or pass it
+        // For simplicity, we assume polling is active.
+    }
+
+    function downloadKHQR() {
+        const img = document.getElementById('khqr-image-v2');
+        if (!img.src) return;
+        const link = document.createElement('a');
+        link.href = img.src;
+        link.download = `KHQR-Payment.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    function closeKHQRV2() {
+        document.getElementById('khqrModalV2').classList.remove('active');
+        if (pollingInterval) clearInterval(pollingInterval);
+        if (timerInterval) clearInterval(timerInterval);
     }
 
     // ── Search & Filter ──────────────────────────────────────────
@@ -761,6 +907,68 @@
     });
 
 </script>
+
+<!-- Premium KHQR Modal Inclusion -->
+<div id="khqrModalV2" class="modal-overlay">
+    <div class="khqr-card-container" style="max-width: 400px; background: #111827; border-radius: 24px; overflow: hidden; border: 1px solid #374151;">
+        <div class="khqr-modal-header" style="background: #4a0404; padding: 18px 20px; display: flex; justify-content: space-between; align-items: center; color: white;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 12px; font-weight: 600; color: #94a3b8;">Member of</span>
+                <div style="background: #991b1b; color: white; padding: 4px 8px; border-radius: 4px; font-size: 10px; font-weight: 800;">KHQR</div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px; font-size: 18px; font-weight: 700;">
+                <div class="timer-icon" style="width: 20px; height: 20px; border: 3px solid rgba(255,255,255,0.1); border-top-color: #ef4444; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+                <span id="countdown-timer">1:00</span>
+            </div>
+            <div onclick="closeKHQRV2()" style="cursor:pointer; font-size: 20px; opacity: 0.7;">✕</div>
+        </div>
+        
+        <div class="khqr-modal-body" id="khqr-modal-main-body" style="padding: 30px; text-align: center;">
+            <div style="color: #f8fafc; font-size: 18px; font-weight: 600; margin-bottom: 25px;">សូមស្កែនទូទាត់ប្រាក់ឥឡូវនេះ</div>
+            
+            <div style="background: white; border-radius: 20px; overflow: hidden; margin-bottom: 25px; color: #111827;">
+                <div style="background: #d42027; height: 40px; display: flex; align-items: center; justify-content: center;">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/d/d0/KHQR_logo.svg/512px-KHQR_logo.svg.png" style="height: 20px;">
+                </div>
+                <div style="padding: 20px; border-bottom: 2px dashed #e2e8f0;">
+                    <div style="font-size: 14px; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 5px;">{{ strtoupper($appSettings['restaurant_name'] ?? 'The Premier Restaurant') }}</div>
+                    <div style="font-size: 24px; font-weight: 800; color: #0f172a;" id="khqr-total-display">$0.00</div>
+                </div>
+                <div style="padding: 25px; display: flex; align-items: center; justify-content: center; min-height: 240px;">
+                    <div id="khqr-loading-v2">
+                        <div class="timer-icon" style="margin: 0 auto 10px; width: 32px; height: 32px; border: 3px solid #e2e8f0; border-top-color: #991b1b; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+                        <p style="color: #64748b; font-size: 14px; font-weight: 500;">Generating QR...</p>
+                    </div>
+                    <img id="khqr-image-v2" src="" style="display:none; width: 100%; max-width: 220px;" alt="KHQR">
+                </div>
+            </div>
+        </div>
+
+        <div id="khqr-success-screen" style="display:none; padding: 40px 30px; text-align: center;">
+            <div style="width: 80px; height: 80px; background: #059669; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px;">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="4"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <h2 style="color: white; margin-bottom: 10px; font-size: 24px;">ការទូទាត់ជោគជ័យ!</h2>
+            <p style="color: #94a3b8; font-size: 16px;">សូមអរគុណ! ការទូទាត់ទទួលបានជោគជ័យ។</p>
+        </div>
+
+        <div class="khqr-modal-footer" id="khqr-modal-footer" style="padding: 0 30px 30px; display: flex; flex-direction: column; gap: 12px;">
+            <button id="aba-deeplink-btn" style="display:none; width: 100%; background: #004d9c; color: white; padding: 14px; border-radius: 12px; font-weight: 700; border: none; cursor: pointer; align-items: center; justify-content: center; gap: 10px; font-size: 16px;">
+                <span>Open in ABA Mobile</span>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></svg>
+            </button>
+            <button onclick="downloadKHQR()" style="background: #1f2937; color: white; padding: 14px; border-radius: 12px; font-weight: 700; border: 1px solid #374151; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 16px;">
+                <span>ទាញយក KHQR</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+    @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+
+<!-- Marketing Pop-up content removed for brevity, check original file if needed -->
 
 <!-- Marketing Pop-up -->
 @if($featuredItem)
